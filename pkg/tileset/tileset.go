@@ -21,7 +21,7 @@ func NewTileSet[T constraints.Integer](tf tile.TileFactory[T]) (*TileSet[T], err
 	ts := []tile.Tile[T]{}
 	vs := lo.RangeFrom(tf.FaceFactory().MinValue(), int(tf.FaceFactory().MaxValue()-tf.FaceFactory().MinValue()+1))
 	ns := lo.RangeFrom(0, int(lo.Must(strconv.ParseInt(strings.Repeat(strconv.FormatInt(int64(len(vs))-1, len(vs)), int(tf.NumFaces())), len(vs), 64)))+1)
-	ss := lo.Map(ns, func(n int, _ int) string {
+	ss := lo.Map(ns, func(n, _ int) string {
 		s := fmt.Sprintf("%0*s", tf.NumFaces(), strconv.FormatInt(int64(n), len(vs)))
 		if len(s) != int(tf.NumFaces()) {
 			panic(fmt.Sprintf("%s must have a length of %d", s, tf.NumFaces()))

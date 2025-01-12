@@ -29,8 +29,7 @@ func newTile[T constraints.Integer](ff face.FaceFactory[T], vs ...T) (*Tile[T], 
 			return nil, err
 		}
 	}
-	return &Tile[T]{faces: lo.Map(t2s, func(t2 lo.Tuple2[*face.Face[T],
-		error], _ int) face.Face[T] {
+	return &Tile[T]{faces: lo.Map(t2s, func(t2 lo.Tuple2[*face.Face[T], error], _ int) face.Face[T] {
 		return *t2.A
 	})}, nil
 }
@@ -45,23 +44,8 @@ func (t Tile[T]) IsMultiple() bool {
 	})
 }
 
-func (t Tile[T]) Rotate() {
-	k := 1 % len(t.faces)
-	copy(t.faces, append(t.faces[len(t.faces)-k:], t.faces[:len(t.faces)-k]...))
-}
-
 func (t Tile[T]) String() string {
-	sb := strings.Builder{}
-	sb.WriteString("[")
-	for i, f := range t.faces {
-		if i > 0 {
-			sb.WriteString("|")
-		}
-		sb.WriteString(f.String())
-	}
-	if t.IsMultiple() {
-		sb.WriteString("*")
-	}
-	sb.WriteString("]")
-	return sb.String()
+	return strings.Join(lo.Map(t.faces, func(f face.Face[T], _ int) string {
+		return f.String()
+	}), ":")
 }

@@ -15,25 +15,59 @@ import (
 
 type taskfile struct {
 	Version string                  `yaml:"version,omitempty"`
+	Vars    map[string]taskfileVar  `yaml:"vars,omitempty"`
 	Tasks   map[string]taskfileTask `yaml:"tasks,omitempty"`
 }
 
+type (
+	taskfileVar        interface{}
+	taskfileVarStatic  string
+	taskfileVarDynamic struct {
+		Sh string `yaml:"sh"`
+	}
+)
+
 type taskfileTask struct {
-	Name string   `yaml:"name,omitempty"`
-	Deps []string `yaml:"deps,omitempty"`
-	Cmds []string `yaml:"cmds,omitempty"`
+	Deps     []string         `yaml:"deps,omitempty"`
+	Cmds     []string         `yaml:"cmds,omitempty"`
+	Label    string           `yaml:"label,omitempty"`
+	Desc     string           `yaml:"desc,omitempty"`
+	Requires taskfileRequires `yaml:"requires,omitempty"`
 }
 
-var bins = []string{"domino"}
-var platforms = []string{"windows/amd64", "linux/amd64", "darwin/amd64", "darwin/arm64"}
-var builds = []string{"debug", "release"}
-var gcflags = map[string]string{
-	"debug":   "all=-N -l",
-	"release": "",
+type taskfileRequires struct {
+	Vars []string `yaml:"vars"`
 }
-var ldflags = map[string]string{
-	"debug":   "",
-	"release": "-s -w",
+
+var (
+	bins      = []string{"domino"}
+	platforms = []string{
+		"windows/amd64",
+		"linux/amd64",
+		"darwin/amd64",
+		"darwin/arm64",
+	}
+	builds = []string{"debug", "release"}
+)
+
+var (
+	gcflags = map[string]string{
+		"debug":   "all=-N -l",
+		"release": "all=-l -B -C",
+	}
+	ldflags = map[string]string{
+		"debug":   "",
+		"release": "-s -w",
+	}
+)
+
+func buildMetadataLdflags() string {
+	pkg := "github.com/hanselrd/domino/internal/build"
+	return strings.Join([]string{
+		fmt.Sprintf("-X '%s.Version={{.BUILD_VERSION}}'", pkg),
+		fmt.Sprintf("-X '%s.Time={{.BUILD_TIME}}'", pkg),
+		fmt.Sprintf("-X '%s.Hash={{.BUILD_HASH}}'", pkg),
+	}, " ")
 }
 
 func osArch(platform string) (os, arch string) {
@@ -45,37 +79,57 @@ func osArch(platform string) (os, arch string) {
 	return
 }
 
+var vars = map[string]taskfileVar{
+	"BUILD_VERSION": "0.0.1-alpha.1",
+	"BUILD_TIME": taskfileVarDynamic{
+		Sh: "date",
+	},
+	"BUILD_HASH": taskfileVarDynamic{
+		Sh: "git rev-parse HEAD",
+	},
+}
+
 var tf = taskfile{
 	Version: "3",
+	Vars:    vars,
 	Tasks: func() (ts map[string]taskfileTask) {
 		ts = map[string]taskfileTask{
-			"bootstrap": taskfileTask{
+			"bootstrap": {
 				Deps: []string{"update"},
 				Cmds: []string{
 					"go run build/taskfile.go",
-				}},
-			"build": taskfileTask{
+				},
+			},
+			"default": {
+				Deps: []string{"build"},
+			},
+			"build": {
 				Deps: lo.Map(builds, func(b string, _ int) string {
 					return fmt.Sprintf("build-%s", b)
 				}),
 			},
-			"format": taskfileTask{
+			"format": {
 				Cmds: []string{
 					"goimports -w -local \"github.com/hanselrd/domino\" .",
-				}},
-			"update": taskfileTask{
+					"gofumpt -w -extra .",
+				},
+			},
+			"update": {
 				Cmds: []string{
 					"go get -u ./...",
 					"go mod tidy",
 					"go get gopkg.in/yaml.v3",
-				}},
-			"test": taskfileTask{
+				},
+			},
+			"test": {
 				Cmds: []string{
 					fmt.Sprintf("go test -gcflags=\"%s\" -ldflags=\"%s\" -v ./...", gcflags["debug"], ldflags["debug"]),
-				}},
-			"clean": taskfileTask{
+				},
+			},
+			"clean": {
 				Cmds: []string{"rm -rf bin"},
-			}}
+			},
+		}
 		tz := map[string]taskfileTask{}
 		for _, b := range bins {
 			for _, p := range platforms {
@@ -84,7 +138,7 @@ var tf = taskfile{
 					tz[fmt.Sprintf("build-%s-%s-%s-%s", b, os, arch, bb)] = taskfileTask{
 						Cmds: []string{
 							fmt.Sprintf("mkdir -p bin/%s", bb),
-							fmt.Sprintf("GOOS=%[2]s GOARCH=%[3]s go build -gcflags=\"%[5]s\" -ldflags=\"%[6]s\" -o bin/%[4]s/%[1]s_%[2]s_%[3]s%[7]s ./cmd/%[1]s", b, os, arch, bb, gcflags[bb], ldflags[bb], lo.Ternary(os == "windows", ".exe", "")),
+							fmt.Sprintf("GOOS=%[2]s GOARCH=%[3]s go build -gcflags=\"%[5]s\" -ldflags=\"%[6]s\" -o bin/%[4]s/%[1]s_%[2]s_%[3]s%[7]s ./cmd/%[1]s", b, os, arch, bb, gcflags[bb], strings.TrimSpace(strings.Join([]string{ldflags[bb], buildMetadataLdflags()}, " ")), lo.Ternary(os == "windows", ".exe", "")),
 						},
 					}
 				}
@@ -98,8 +152,8 @@ var tf = taskfile{
 				Deps: lo.Keys(tz),
 			}
 		}
-		for _, v := range ts {
-			slices.Sort(v.Deps)
+		for _, k := range lo.Keys(ts) {
+			slices.Sort(ts[k].Deps)
 		}
 		return
 	}(),
