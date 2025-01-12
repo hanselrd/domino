@@ -66,18 +66,18 @@ type model struct {
 	help     help.Model
 	ready    bool
 	viewport viewport.Model
-	ts       tileset.TileSet[uint]
-	tiles    []tile.Model[uint]
+	ts       tileset.TileSet
+	tiles    []tile.Model
 }
 
 func initialModel() model {
-	t2f6f := tile.NewBasicTileFactory(face.NewFaceUnsignedFactory(6), 2)
+	t2f6f := tile.NewTileFactory(face.NewUnsignedFaceFactory(6), 2)
 	ts := lo.Must(tileset.NewTileSetShuffled(t2f6f))
 	return model{
 		keys: keys,
 		help: help.New(),
 		ts:   *ts,
-		tiles: lo.Map(ts.Tiles(), func(t tile.Tile[uint], _ int) tile.Model[uint] {
+		tiles: lo.Map(ts.Tiles(), func(t tile.Tile, _ int) tile.Model {
 			m := tile.NewModel(&t, lipgloss.Color("#BB4712"))
 			// m.Hidden = true
 			m.Horizontal = t.IsMultiple()
@@ -108,7 +108,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			ss := []string{}
 			tss := lo.Chunk(m.tiles, len(m.tiles)/4)
 			for _, ts := range tss {
-				ss = append(ss, lipgloss.JoinHorizontal(lipgloss.Center, lo.Map(ts, func(t tile.Model[uint], _ int) string {
+				ss = append(ss, lipgloss.JoinHorizontal(lipgloss.Center, lo.Map(ts, func(t tile.Model, _ int) string {
 					return t.View()
 				})...))
 			}

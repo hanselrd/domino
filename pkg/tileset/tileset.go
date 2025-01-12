@@ -8,17 +8,16 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-	"golang.org/x/exp/constraints"
 
 	"github.com/hanselrd/domino/pkg/tile"
 )
 
-type TileSet[T constraints.Integer] struct {
-	tiles []tile.Tile[T]
+type TileSet struct {
+	tiles []tile.Tile
 }
 
-func NewTileSet[T constraints.Integer](tf tile.TileFactory[T]) (*TileSet[T], error) {
-	ts := []tile.Tile[T]{}
+func NewTileSet(tf tile.TileFactory) (*TileSet, error) {
+	ts := []tile.Tile{}
 	vs := lo.RangeFrom(tf.FaceFactory().MinValue(), int(tf.FaceFactory().MaxValue()-tf.FaceFactory().MinValue()+1))
 	ns := lo.RangeFrom(0, int(lo.Must(strconv.ParseInt(strings.Repeat(strconv.FormatInt(int64(len(vs))-1, len(vs)), int(tf.NumFaces())), len(vs), 64)))+1)
 	ss := lo.Map(ns, func(n, _ int) string {
@@ -28,8 +27,8 @@ func NewTileSet[T constraints.Integer](tf tile.TileFactory[T]) (*TileSet[T], err
 		}
 		return s
 	})
-	vss := lo.Map(ss, func(s string, _ int) []T {
-		vs := lo.Map(strings.Split(s, ""), func(i string, _ int) T {
+	vss := lo.Map(ss, func(s string, _ int) []int {
+		vs := lo.Map(strings.Split(s, ""), func(i string, _ int) int {
 			return vs[lo.Must(strconv.ParseInt(i, len(vs), 64))]
 		})
 		slices.Sort(vs)
@@ -38,16 +37,16 @@ func NewTileSet[T constraints.Integer](tf tile.TileFactory[T]) (*TileSet[T], err
 	sort.Slice(vss, func(i, j int) bool {
 		return slices.Compare(vss[i], vss[j]) < 0
 	})
-	vss = slices.CompactFunc(vss, func(a, b []T) bool {
+	vss = slices.CompactFunc(vss, func(a, b []int) bool {
 		return slices.Compare(a, b) == 0
 	})
-	ts = lo.Map(vss, func(vs []T, _ int) tile.Tile[T] {
+	ts = lo.Map(vss, func(vs []int, _ int) tile.Tile {
 		return *lo.Must(tf.CreateTile(vs...))
 	})
-	return &TileSet[T]{tiles: ts}, nil
+	return &TileSet{tiles: ts}, nil
 }
 
-func NewTileSetShuffled[T constraints.Integer](tf tile.TileFactory[T]) (*TileSet[T], error) {
+func NewTileSetShuffled(tf tile.TileFactory) (*TileSet, error) {
 	ts, err := NewTileSet(tf)
 	if err != nil {
 		return nil, err
@@ -56,21 +55,21 @@ func NewTileSetShuffled[T constraints.Integer](tf tile.TileFactory[T]) (*TileSet
 	return ts, nil
 }
 
-func (ts TileSet[T]) Tiles() []tile.Tile[T] {
+func (ts TileSet) Tiles() []tile.Tile {
 	return ts.tiles
 }
 
-func (ts *TileSet[T]) Shuffle() {
+func (ts *TileSet) Shuffle() {
 	lo.Shuffle(ts.tiles)
 }
 
-func (ts *TileSet[T]) Draw(n int) []tile.Tile[T] {
-	tz := make([]tile.Tile[T], n)
+func (ts *TileSet) Draw(n int) []tile.Tile {
+	tz := make([]tile.Tile, n)
 	copy(tz, ts.tiles[:n])
 	ts.tiles = slices.Delete(ts.tiles, 0, n)
 	return tz
 }
 
-func (ts *TileSet[T]) Return(tz ...tile.Tile[T]) {
+func (ts *TileSet) Return(tz ...tile.Tile) {
 	ts.tiles = slices.Concat(ts.tiles, tz)
 }

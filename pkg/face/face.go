@@ -1,19 +1,25 @@
 package face
 
-import (
-	"fmt"
+import "fmt"
 
-	"golang.org/x/exp/constraints"
-)
+type Face int
 
-type Face[T constraints.Integer] struct {
-	value T
+func newFace(min, max, v int) (*Face, error) {
+	if v < min || v > max {
+		return nil, fmt.Errorf("value %d is not within range [%d, %d]", v, min, max)
+	}
+	f := Face(v)
+	return &f, nil
 }
 
-func (f Face[T]) Value() T {
-	return f.value
+func newUnsignedFace(max, v uint) (*Face, error) {
+	return newFace(0, int(max), int(v))
 }
 
-func (f Face[T]) String() string {
-	return fmt.Sprintf("%d", f.Value())
+func (f Face) NumPips() int {
+	return int(f)
+}
+
+func (f Face) String() string {
+	return fmt.Sprintf("%d", f.NumPips())
 }

@@ -6,21 +6,20 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-	"golang.org/x/exp/constraints"
 
 	"github.com/hanselrd/domino/pkg/face"
 )
 
-type Tile[T constraints.Integer] struct {
-	faces []face.Face[T]
+type Tile struct {
+	faces []face.Face
 }
 
-func newTile[T constraints.Integer](ff face.FaceFactory[T], vs ...T) (*Tile[T], error) {
+func newTile(ff face.FaceFactory, vs ...int) (*Tile, error) {
 	if len(vs) == 0 {
 		return nil, fmt.Errorf("at least 1 value must be provided")
 	}
 	slices.Sort(vs)
-	t2s := lo.Map(vs, func(v T, _ int) lo.Tuple2[*face.Face[T], error] {
+	t2s := lo.Map(vs, func(v, _ int) lo.Tuple2[*face.Face, error] {
 		return lo.T2(ff.CreateFace(v))
 	})
 	for _, t2 := range t2s {
@@ -29,23 +28,23 @@ func newTile[T constraints.Integer](ff face.FaceFactory[T], vs ...T) (*Tile[T], 
 			return nil, err
 		}
 	}
-	return &Tile[T]{faces: lo.Map(t2s, func(t2 lo.Tuple2[*face.Face[T], error], _ int) face.Face[T] {
+	return &Tile{faces: lo.Map(t2s, func(t2 lo.Tuple2[*face.Face, error], _ int) face.Face {
 		return *t2.A
 	})}, nil
 }
 
-func (t Tile[T]) Faces() []face.Face[T] {
+func (t Tile) Faces() []face.Face {
 	return t.faces
 }
 
-func (t Tile[T]) IsMultiple() bool {
-	return lo.EveryBy(t.faces, func(f face.Face[T]) bool {
+func (t Tile) IsMultiple() bool {
+	return lo.EveryBy(t.faces, func(f face.Face) bool {
 		return f == t.faces[0]
 	})
 }
 
-func (t Tile[T]) String() string {
-	return strings.Join(lo.Map(t.faces, func(f face.Face[T], _ int) string {
+func (t Tile) String() string {
+	return strings.Join(lo.Map(t.faces, func(f face.Face, _ int) string {
 		return f.String()
 	}), ":")
 }
