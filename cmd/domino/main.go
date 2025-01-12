@@ -11,6 +11,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/lucasb-eyer/go-colorful"
 	"github.com/samber/lo"
 
 	"github.com/hanselrd/domino/internal/build"
@@ -78,7 +79,7 @@ func initialModel() model {
 		help: help.New(),
 		ts:   *ts,
 		tvs: lo.Map(ts.Tiles(), func(t tile.Tile, _ int) tile.TileView {
-			m := tile.NewTileView(&t, lipgloss.Color("#BB4712"))
+			m := tile.NewTileView(&t, lipgloss.Color(colorful.HappyColor().Hex()))
 			// m.Hidden = true
 			m.Horizontal = t.IsMultiple()
 			return m
