@@ -8,7 +8,6 @@ require (
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/samber/lo v1.47.0
-	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 )
 
 require (

@@ -67,7 +67,7 @@ type model struct {
 	ready    bool
 	viewport viewport.Model
 	ts       tileset.TileSet
-	tiles    []tile.Model
+	tvs      []tile.TileView
 }
 
 func initialModel() model {
@@ -77,8 +77,8 @@ func initialModel() model {
 		keys: keys,
 		help: help.New(),
 		ts:   *ts,
-		tiles: lo.Map(ts.Tiles(), func(t tile.Tile, _ int) tile.Model {
-			m := tile.NewModel(&t, lipgloss.Color("#BB4712"))
+		tvs: lo.Map(ts.Tiles(), func(t tile.Tile, _ int) tile.TileView {
+			m := tile.NewTileView(&t, lipgloss.Color("#BB4712"))
 			// m.Hidden = true
 			m.Horizontal = t.IsMultiple()
 			return m
@@ -106,9 +106,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				BorderForeground(lipgloss.Color("#3C3C3C")).
 				Margin(0, 1)
 			ss := []string{}
-			tss := lo.Chunk(m.tiles, len(m.tiles)/4)
+			tss := lo.Chunk(m.tvs, len(m.tvs)/4)
 			for _, ts := range tss {
-				ss = append(ss, lipgloss.JoinHorizontal(lipgloss.Center, lo.Map(ts, func(t tile.Model, _ int) string {
+				ss = append(ss, lipgloss.JoinHorizontal(lipgloss.Center, lo.Map(ts, func(t tile.TileView, _ int) string {
 					return t.View()
 				})...))
 			}
