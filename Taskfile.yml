@@ -2,8 +2,10 @@ version: "3"
 vars:
   BUILD_HASH:
     sh: git rev-parse HEAD
+  BUILD_SHORT_HASH:
+    sh: git rev-parse --short=6 HEAD
   BUILD_TIME:
-    sh: date
+    sh: date --utc
   BUILD_VERSION: 0.0.1-alpha.1
 tasks:
   bootstrap:
@@ -28,35 +30,35 @@ tasks:
   build-domino-darwin-amd64-debug:
     cmds:
       - mkdir -p bin/debug
-      - GOOS=darwin GOARCH=amd64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}'" -o bin/debug/domino_darwin_amd64 ./cmd/domino
+      - GOOS=darwin GOARCH=amd64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}'" -o bin/debug/domino_darwin_amd64 ./cmd/domino
   build-domino-darwin-amd64-release:
     cmds:
       - mkdir -p bin/release
-      - GOOS=darwin GOARCH=amd64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}'" -o bin/release/domino_darwin_amd64 ./cmd/domino
+      - GOOS=darwin GOARCH=amd64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}'" -o bin/release/domino_darwin_amd64 ./cmd/domino
   build-domino-darwin-arm64-debug:
     cmds:
       - mkdir -p bin/debug
-      - GOOS=darwin GOARCH=arm64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}'" -o bin/debug/domino_darwin_arm64 ./cmd/domino
+      - GOOS=darwin GOARCH=arm64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}'" -o bin/debug/domino_darwin_arm64 ./cmd/domino
   build-domino-darwin-arm64-release:
     cmds:
       - mkdir -p bin/release
-      - GOOS=darwin GOARCH=arm64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}'" -o bin/release/domino_darwin_arm64 ./cmd/domino
+      - GOOS=darwin GOARCH=arm64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}'" -o bin/release/domino_darwin_arm64 ./cmd/domino
   build-domino-linux-amd64-debug:
     cmds:
       - mkdir -p bin/debug
-      - GOOS=linux GOARCH=amd64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}'" -o bin/debug/domino_linux_amd64 ./cmd/domino
+      - GOOS=linux GOARCH=amd64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}'" -o bin/debug/domino_linux_amd64 ./cmd/domino
   build-domino-linux-amd64-release:
     cmds:
       - mkdir -p bin/release
-      - GOOS=linux GOARCH=amd64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}'" -o bin/release/domino_linux_amd64 ./cmd/domino
+      - GOOS=linux GOARCH=amd64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}'" -o bin/release/domino_linux_amd64 ./cmd/domino
   build-domino-windows-amd64-debug:
     cmds:
       - mkdir -p bin/debug
-      - GOOS=windows GOARCH=amd64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}'" -o bin/debug/domino_windows_amd64.exe ./cmd/domino
+      - GOOS=windows GOARCH=amd64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}'" -o bin/debug/domino_windows_amd64.exe ./cmd/domino
   build-domino-windows-amd64-release:
     cmds:
       - mkdir -p bin/release
-      - GOOS=windows GOARCH=amd64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}'" -o bin/release/domino_windows_amd64.exe ./cmd/domino
+      - GOOS=windows GOARCH=amd64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}'" -o bin/release/domino_windows_amd64.exe ./cmd/domino
   build-release:
     deps:
       - build-domino-darwin-amd64-debug

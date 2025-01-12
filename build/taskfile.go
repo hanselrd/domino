@@ -61,15 +61,6 @@ var (
 	}
 )
 
-func buildMetadataLdflags() string {
-	pkg := "github.com/hanselrd/domino/internal/build"
-	return strings.Join([]string{
-		fmt.Sprintf("-X '%s.Version={{.BUILD_VERSION}}'", pkg),
-		fmt.Sprintf("-X '%s.Time={{.BUILD_TIME}}'", pkg),
-		fmt.Sprintf("-X '%s.Hash={{.BUILD_HASH}}'", pkg),
-	}, " ")
-}
-
 func osArch(platform string) (os, arch string) {
 	s := strings.Split(platform, "/")
 	if len(s) != 2 {
@@ -79,19 +70,33 @@ func osArch(platform string) (os, arch string) {
 	return
 }
 
-var vars = map[string]taskfileVar{
-	"BUILD_VERSION": "0.0.1-alpha.1",
-	"BUILD_TIME": taskfileVarDynamic{
-		Sh: "date",
-	},
-	"BUILD_HASH": taskfileVarDynamic{
-		Sh: "git rev-parse HEAD",
-	},
-}
+var (
+	buildMetadataVars = map[string]taskfileVar{
+		"BUILD_VERSION": "0.0.1-alpha.1",
+		"BUILD_TIME": taskfileVarDynamic{
+			Sh: "date --utc",
+		},
+		"BUILD_HASH": taskfileVarDynamic{
+			Sh: "git rev-parse HEAD",
+		},
+		"BUILD_SHORT_HASH": taskfileVarDynamic{
+			Sh: "git rev-parse --short=6 HEAD",
+		},
+	}
+	buildMetadataLdflags = func() string {
+		pkg := "github.com/hanselrd/domino/internal/build"
+		return strings.Join([]string{
+			fmt.Sprintf("-X '%s.Version={{.BUILD_VERSION}}'", pkg),
+			fmt.Sprintf("-X '%s.Time={{.BUILD_TIME}}'", pkg),
+			fmt.Sprintf("-X '%s.Hash={{.BUILD_HASH}}'", pkg),
+			fmt.Sprintf("-X '%s.ShortHash={{.BUILD_SHORT_HASH}}'", pkg),
+		}, " ")
+	}()
+)
 
 var tf = taskfile{
 	Version: "3",
-	Vars:    vars,
+	Vars:    buildMetadataVars,
 	Tasks: func() (ts map[string]taskfileTask) {
 		ts = map[string]taskfileTask{
 			"bootstrap": {
@@ -138,7 +143,7 @@ var tf = taskfile{
 					tz[fmt.Sprintf("build-%s-%s-%s-%s", b, os, arch, bb)] = taskfileTask{
 						Cmds: []string{
 							fmt.Sprintf("mkdir -p bin/%s", bb),
-							fmt.Sprintf("GOOS=%[2]s GOARCH=%[3]s go build -gcflags=\"%[5]s\" -ldflags=\"%[6]s\" -o bin/%[4]s/%[1]s_%[2]s_%[3]s%[7]s ./cmd/%[1]s", b, os, arch, bb, gcflags[bb], strings.TrimSpace(strings.Join([]string{ldflags[bb], buildMetadataLdflags()}, " ")), lo.Ternary(os == "windows", ".exe", "")),
+							fmt.Sprintf("GOOS=%[2]s GOARCH=%[3]s go build -gcflags=\"%[5]s\" -ldflags=\"%[6]s\" -o bin/%[4]s/%[1]s_%[2]s_%[3]s%[7]s ./cmd/%[1]s", b, os, arch, bb, gcflags[bb], strings.TrimSpace(strings.Join([]string{ldflags[bb], buildMetadataLdflags}, " ")), lo.Ternary(os == "windows", ".exe", "")),
 						},
 					}
 				}

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"runtime"
 	"slices"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -115,9 +116,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				"-----------------------",
 				"/// Build Metadata",
 				"-----------------------",
+				runtime.Version(),
 				build.Version,
 				build.Time,
 				build.Hash,
+				build.ShortHash,
 				"-----------------------",
 			})
 			m.viewport.SetContent(lipgloss.JoinVertical(lipgloss.Left, ss...))
