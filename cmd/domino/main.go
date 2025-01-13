@@ -29,13 +29,13 @@ type model struct {
 
 func initialModel() model {
 	t2f6f := tile.NewTileFactory(face.NewUnsignedFaceFactory(6), 2)
-	ts := lo.Must(tileset.NewTileSetShuffled(t2f6f))
+	ts := lo.Must(tileset.NewTileSet(t2f6f))
 	return model{
 		help: tui.NewHelpModel(),
 		ts:   *ts,
-		tvs: lo.Map(ts.Tiles(), func(t tile.Tile, _ int) tui.TileView {
+		tvs: lo.Map(ts.Tiles(), func(t tile.Tile, i int) tui.TileView {
 			m := tui.NewTileView(&t, colorful.HappyColor())
-			// m.Hidden = true
+			m.Hidden = i%2 == 0
 			m.Horizontal = t.IsMultiple()
 			return m
 		}),
@@ -76,6 +76,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				build.Time,
 				build.Hash,
 				build.ShortHash,
+				build.Dirty,
 				"-----------------------",
 			})
 			m.viewport.SetContent(lipgloss.JoinVertical(lipgloss.Left, ss...))

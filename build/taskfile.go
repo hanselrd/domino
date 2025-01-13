@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/samber/lo"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/hanselrd/domino/internal/taskfile"
 	"github.com/hanselrd/domino/internal/util/maputil"
+	"github.com/hanselrd/domino/internal/util/sliceutil"
 )
 
 var (
@@ -25,7 +27,12 @@ var (
 		"darwin/arm64",
 	}
 	builds  = []string{"debug", "release"}
-	sources = []string{"cmd/**/*.go", "internal/**/*.go", "pkg/**/*.go"}
+	sources = slices.Concat(
+		lo.Map([]string{"cmd", "internal", "pkg"}, func(d string, _ int) string {
+			return fmt.Sprintf("%s/**/*.go", d)
+		}),
+		[]string{"Taskfile.yml"},
+	)
 	gcflags = map[string]string{
 		"debug":   "all=-N -l",
 		"release": "all=-l -B -C",
@@ -35,18 +42,21 @@ var (
 		"release": "-s -w",
 	}
 	buildMetadataVars = lo.MapKeys(map[string]taskfile.Variable{
-		"VERSION": "0.0.1-alpha.1",
-		"TIME": taskfile.VariableDynamic{
+		"version": "0.0.1-alpha.1",
+		"time": taskfile.VariableDynamic{
 			Sh: "date --utc \"+%Y-%m-%dT%H:%M:%SZ\"",
 		},
-		"HASH": taskfile.VariableDynamic{
+		"hash": taskfile.VariableDynamic{
 			Sh: "git rev-parse HEAD",
 		},
-		"SHORT_HASH": taskfile.VariableDynamic{
+		"short_hash": taskfile.VariableDynamic{
 			Sh: "git rev-parse --short=7 HEAD",
 		},
+		"dirty": taskfile.VariableDynamic{
+			Sh: "git diff --quiet || echo \"dirty\"",
+		},
 	}, func(_ taskfile.Variable, k string) string {
-		return fmt.Sprintf("BUILD_%s", k)
+		return fmt.Sprintf("BUILD_%s", strings.ToUpper(k))
 	})
 	buildMetadataVarNames = lo.Must(maputil.SortedKeys(buildMetadataVars))
 	buildMetadataLdflags  = strings.Join(
@@ -76,13 +86,16 @@ var tf = taskfile.Taskfile{
 	Tasks: func() map[string]taskfile.Task {
 		ts0 := map[string]taskfile.Task{
 			"default": {
-				Cmds: lo.Map(
-					[]string{"format", "bootstrap", "build"},
-					func(t string, _ int) taskfile.Command {
-						return taskfile.CommandStruct{
-							Task: t,
-						}
-					},
+				Cmds: slices.Concat(
+					lo.Map(
+						[]string{"format", "bootstrap"},
+						func(t string, _ int) taskfile.Command {
+							return taskfile.CommandStruct{
+								Task: t,
+							}
+						},
+					),
+					[]taskfile.Command{"task build"},
 				),
 			},
 			"bootstrap": {
@@ -91,7 +104,6 @@ var tf = taskfile.Taskfile{
 				},
 				Sources:   []string{"build/taskfile.go"},
 				Generates: []string{"Taskfile.yml"},
-				Method:    "timestamp",
 			},
 			"build": {
 				Deps: lo.Map(builds, func(b string, _ int) taskfile.Dependency {
@@ -200,9 +212,7 @@ var tf = taskfile.Taskfile{
 				return strings.HasSuffix(k, fmt.Sprintf("-%s", b))
 			})
 			ts2[fmt.Sprintf("build-%s", b)] = taskfile.Task{
-				Deps: lo.Map(ks, func(k string, _ int) taskfile.Dependency {
-					return k
-				}),
+				Deps: lo.T2(sliceutil.Convert[string, taskfile.Dependency](ks)).A,
 			}
 		}
 		ts := lo.Assign(ts0, ts1, ts2)

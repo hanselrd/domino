@@ -5,4 +5,5 @@ var (
 	Time      string
 	Hash      string
 	ShortHash string
+	Dirty     string
 )

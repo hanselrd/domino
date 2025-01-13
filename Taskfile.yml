@@ -1,5 +1,7 @@
 version: "3"
 vars:
+  BUILD_DIRTY:
+    sh: git diff --quiet || echo "dirty"
   BUILD_HASH:
     sh: git rev-parse HEAD
   BUILD_SHORT_HASH:
@@ -15,7 +17,6 @@ tasks:
       - build/taskfile.go
     generates:
       - Taskfile.yml
-    method: timestamp
   build:
     deps:
       - build-debug
@@ -30,15 +31,17 @@ tasks:
   build-domino-darwin-amd64-debug:
     cmds:
       - mkdir -p bin/debug
-      - GOOS=darwin GOARCH=amd64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/debug/domino_darwin_amd64 ./cmd/domino
+      - GOOS=darwin GOARCH=amd64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Dirty={{.BUILD_DIRTY}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/debug/domino_darwin_amd64 ./cmd/domino
     sources:
       - cmd/**/*.go
       - internal/**/*.go
       - pkg/**/*.go
+      - Taskfile.yml
     generates:
       - bin/debug/domino_darwin_amd64
     requires:
       vars:
+        - BUILD_DIRTY
         - BUILD_HASH
         - BUILD_SHORT_HASH
         - BUILD_TIME
@@ -46,15 +49,17 @@ tasks:
   build-domino-darwin-amd64-release:
     cmds:
       - mkdir -p bin/release
-      - GOOS=darwin GOARCH=amd64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/release/domino_darwin_amd64 ./cmd/domino
+      - GOOS=darwin GOARCH=amd64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Dirty={{.BUILD_DIRTY}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/release/domino_darwin_amd64 ./cmd/domino
     sources:
       - cmd/**/*.go
       - internal/**/*.go
       - pkg/**/*.go
+      - Taskfile.yml
     generates:
       - bin/release/domino_darwin_amd64
     requires:
       vars:
+        - BUILD_DIRTY
         - BUILD_HASH
         - BUILD_SHORT_HASH
         - BUILD_TIME
@@ -62,15 +67,17 @@ tasks:
   build-domino-darwin-arm64-debug:
     cmds:
       - mkdir -p bin/debug
-      - GOOS=darwin GOARCH=arm64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/debug/domino_darwin_arm64 ./cmd/domino
+      - GOOS=darwin GOARCH=arm64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Dirty={{.BUILD_DIRTY}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/debug/domino_darwin_arm64 ./cmd/domino
     sources:
       - cmd/**/*.go
       - internal/**/*.go
       - pkg/**/*.go
+      - Taskfile.yml
     generates:
       - bin/debug/domino_darwin_arm64
     requires:
       vars:
+        - BUILD_DIRTY
         - BUILD_HASH
         - BUILD_SHORT_HASH
         - BUILD_TIME
@@ -78,15 +85,17 @@ tasks:
   build-domino-darwin-arm64-release:
     cmds:
       - mkdir -p bin/release
-      - GOOS=darwin GOARCH=arm64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/release/domino_darwin_arm64 ./cmd/domino
+      - GOOS=darwin GOARCH=arm64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Dirty={{.BUILD_DIRTY}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/release/domino_darwin_arm64 ./cmd/domino
     sources:
       - cmd/**/*.go
       - internal/**/*.go
       - pkg/**/*.go
+      - Taskfile.yml
     generates:
       - bin/release/domino_darwin_arm64
     requires:
       vars:
+        - BUILD_DIRTY
         - BUILD_HASH
         - BUILD_SHORT_HASH
         - BUILD_TIME
@@ -94,15 +103,17 @@ tasks:
   build-domino-debug:
     cmds:
       - mkdir -p bin/debug
-      - go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/debug/domino ./cmd/domino
+      - go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Dirty={{.BUILD_DIRTY}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/debug/domino ./cmd/domino
     sources:
       - cmd/**/*.go
       - internal/**/*.go
       - pkg/**/*.go
+      - Taskfile.yml
     generates:
       - bin/debug/domino
     requires:
       vars:
+        - BUILD_DIRTY
         - BUILD_HASH
         - BUILD_SHORT_HASH
         - BUILD_TIME
@@ -110,15 +121,17 @@ tasks:
   build-domino-linux-amd64-debug:
     cmds:
       - mkdir -p bin/debug
-      - GOOS=linux GOARCH=amd64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/debug/domino_linux_amd64 ./cmd/domino
+      - GOOS=linux GOARCH=amd64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Dirty={{.BUILD_DIRTY}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/debug/domino_linux_amd64 ./cmd/domino
     sources:
       - cmd/**/*.go
       - internal/**/*.go
       - pkg/**/*.go
+      - Taskfile.yml
     generates:
       - bin/debug/domino_linux_amd64
     requires:
       vars:
+        - BUILD_DIRTY
         - BUILD_HASH
         - BUILD_SHORT_HASH
         - BUILD_TIME
@@ -126,15 +139,17 @@ tasks:
   build-domino-linux-amd64-release:
     cmds:
       - mkdir -p bin/release
-      - GOOS=linux GOARCH=amd64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/release/domino_linux_amd64 ./cmd/domino
+      - GOOS=linux GOARCH=amd64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Dirty={{.BUILD_DIRTY}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/release/domino_linux_amd64 ./cmd/domino
     sources:
       - cmd/**/*.go
       - internal/**/*.go
       - pkg/**/*.go
+      - Taskfile.yml
     generates:
       - bin/release/domino_linux_amd64
     requires:
       vars:
+        - BUILD_DIRTY
         - BUILD_HASH
         - BUILD_SHORT_HASH
         - BUILD_TIME
@@ -142,15 +157,17 @@ tasks:
   build-domino-release:
     cmds:
       - mkdir -p bin/release
-      - go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/release/domino ./cmd/domino
+      - go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Dirty={{.BUILD_DIRTY}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/release/domino ./cmd/domino
     sources:
       - cmd/**/*.go
       - internal/**/*.go
       - pkg/**/*.go
+      - Taskfile.yml
     generates:
       - bin/release/domino
     requires:
       vars:
+        - BUILD_DIRTY
         - BUILD_HASH
         - BUILD_SHORT_HASH
         - BUILD_TIME
@@ -158,15 +175,17 @@ tasks:
   build-domino-windows-amd64-debug:
     cmds:
       - mkdir -p bin/debug
-      - GOOS=windows GOARCH=amd64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/debug/domino_windows_amd64.exe ./cmd/domino
+      - GOOS=windows GOARCH=amd64 go build -gcflags="all=-N -l" -ldflags="-X 'github.com/hanselrd/domino/internal/build.Dirty={{.BUILD_DIRTY}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/debug/domino_windows_amd64.exe ./cmd/domino
     sources:
       - cmd/**/*.go
       - internal/**/*.go
       - pkg/**/*.go
+      - Taskfile.yml
     generates:
       - bin/debug/domino_windows_amd64.exe
     requires:
       vars:
+        - BUILD_DIRTY
         - BUILD_HASH
         - BUILD_SHORT_HASH
         - BUILD_TIME
@@ -174,15 +193,17 @@ tasks:
   build-domino-windows-amd64-release:
     cmds:
       - mkdir -p bin/release
-      - GOOS=windows GOARCH=amd64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/release/domino_windows_amd64.exe ./cmd/domino
+      - GOOS=windows GOARCH=amd64 go build -gcflags="all=-l -B -C" -ldflags="-s -w -X 'github.com/hanselrd/domino/internal/build.Dirty={{.BUILD_DIRTY}}' -X 'github.com/hanselrd/domino/internal/build.Hash={{.BUILD_HASH}}' -X 'github.com/hanselrd/domino/internal/build.ShortHash={{.BUILD_SHORT_HASH}}' -X 'github.com/hanselrd/domino/internal/build.Time={{.BUILD_TIME}}' -X 'github.com/hanselrd/domino/internal/build.Version={{.BUILD_VERSION}}'" -o bin/release/domino_windows_amd64.exe ./cmd/domino
     sources:
       - cmd/**/*.go
       - internal/**/*.go
       - pkg/**/*.go
+      - Taskfile.yml
     generates:
       - bin/release/domino_windows_amd64.exe
     requires:
       vars:
+        - BUILD_DIRTY
         - BUILD_HASH
         - BUILD_SHORT_HASH
         - BUILD_TIME
@@ -201,7 +222,7 @@ tasks:
     cmds:
       - task: format
       - task: bootstrap
-      - task: build
+      - task build
   format:
     cmds:
       - goimports -w -local "github.com/hanselrd/domino" .
