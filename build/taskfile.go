@@ -6,38 +6,15 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"slices"
+	"runtime"
 	"strings"
 
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
+
+	"github.com/hanselrd/domino/internal/taskfile"
+	"github.com/hanselrd/domino/internal/util/maputil"
 )
-
-type taskfile struct {
-	Version string                  `yaml:"version,omitempty"`
-	Vars    map[string]taskfileVar  `yaml:"vars,omitempty"`
-	Tasks   map[string]taskfileTask `yaml:"tasks,omitempty"`
-}
-
-type (
-	taskfileVar        interface{}
-	taskfileVarStatic  string
-	taskfileVarDynamic struct {
-		Sh string `yaml:"sh"`
-	}
-)
-
-type taskfileTask struct {
-	Deps     []string         `yaml:"deps,omitempty"`
-	Cmds     []string         `yaml:"cmds,omitempty"`
-	Label    string           `yaml:"label,omitempty"`
-	Desc     string           `yaml:"desc,omitempty"`
-	Requires taskfileRequires `yaml:"requires,omitempty"`
-}
-
-type taskfileRequires struct {
-	Vars []string `yaml:"vars"`
-}
 
 var (
 	bins      = []string{"domino"}
@@ -47,10 +24,8 @@ var (
 		"darwin/amd64",
 		"darwin/arm64",
 	}
-	builds = []string{"debug", "release"}
-)
-
-var (
+	builds  = []string{"debug", "release"}
+	sources = []string{"cmd/**/*.go", "internal/**/*.go", "pkg/**/*.go"}
 	gcflags = map[string]string{
 		"debug":   "all=-N -l",
 		"release": "all=-l -B -C",
@@ -59,6 +34,31 @@ var (
 		"debug":   "",
 		"release": "-s -w",
 	}
+	buildMetadataVars = lo.MapKeys(map[string]taskfile.Variable{
+		"VERSION": "0.0.1-alpha.1",
+		"TIME": taskfile.VariableDynamic{
+			Sh: "date --utc \"+%Y-%m-%dT%H:%M:%SZ\"",
+		},
+		"HASH": taskfile.VariableDynamic{
+			Sh: "git rev-parse HEAD",
+		},
+		"SHORT_HASH": taskfile.VariableDynamic{
+			Sh: "git rev-parse --short=7 HEAD",
+		},
+	}, func(_ taskfile.Variable, k string) string {
+		return fmt.Sprintf("BUILD_%s", k)
+	})
+	buildMetadataVarNames = lo.Must(maputil.SortedKeys(buildMetadataVars))
+	buildMetadataLdflags  = strings.Join(
+		lo.Map(buildMetadataVarNames, func(n string, _ int) string {
+			return fmt.Sprintf(
+				"-X 'github.com/hanselrd/domino/internal/build.%s={{.%s}}'",
+				lo.PascalCase(strings.TrimPrefix(n, "BUILD_")),
+				n,
+			)
+		}),
+		" ",
+	)
 )
 
 func osArch(platform string) (os, arch string) {
@@ -70,97 +70,143 @@ func osArch(platform string) (os, arch string) {
 	return
 }
 
-var (
-	buildMetadataVars = map[string]taskfileVar{
-		"BUILD_VERSION": "0.0.1-alpha.1",
-		"BUILD_TIME": taskfileVarDynamic{
-			Sh: "date --utc",
-		},
-		"BUILD_HASH": taskfileVarDynamic{
-			Sh: "git rev-parse HEAD",
-		},
-		"BUILD_SHORT_HASH": taskfileVarDynamic{
-			Sh: "git rev-parse --short=6 HEAD",
-		},
-	}
-	buildMetadataLdflags = func() string {
-		pkg := "github.com/hanselrd/domino/internal/build"
-		return strings.Join([]string{
-			fmt.Sprintf("-X '%s.Version={{.BUILD_VERSION}}'", pkg),
-			fmt.Sprintf("-X '%s.Time={{.BUILD_TIME}}'", pkg),
-			fmt.Sprintf("-X '%s.Hash={{.BUILD_HASH}}'", pkg),
-			fmt.Sprintf("-X '%s.ShortHash={{.BUILD_SHORT_HASH}}'", pkg),
-		}, " ")
-	}()
-)
-
-var tf = taskfile{
+var tf = taskfile.Taskfile{
 	Version: "3",
 	Vars:    buildMetadataVars,
-	Tasks: func() (ts map[string]taskfileTask) {
-		ts = map[string]taskfileTask{
+	Tasks: func() map[string]taskfile.Task {
+		ts0 := map[string]taskfile.Task{
+			"default": {
+				Cmds: lo.Map(
+					[]string{"format", "bootstrap", "build"},
+					func(t string, _ int) taskfile.Command {
+						return taskfile.CommandStruct{
+							Task: t,
+						}
+					},
+				),
+			},
 			"bootstrap": {
-				Deps: []string{"update"},
-				Cmds: []string{
+				Cmds: []taskfile.Command{
 					"go run build/taskfile.go",
 				},
-			},
-			"default": {
-				Deps: []string{"build"},
+				Sources:   []string{"build/taskfile.go"},
+				Generates: []string{"Taskfile.yml"},
+				Method:    "timestamp",
 			},
 			"build": {
-				Deps: lo.Map(builds, func(b string, _ int) string {
+				Deps: lo.Map(builds, func(b string, _ int) taskfile.Dependency {
 					return fmt.Sprintf("build-%s", b)
 				}),
 			},
 			"format": {
-				Cmds: []string{
+				Cmds: []taskfile.Command{
 					"goimports -w -local \"github.com/hanselrd/domino\" .",
 					"gofumpt -w -extra .",
+					"golines -w -m 100 **/*.go",
 				},
+				Sources: []string{"**/*.go"},
 			},
 			"update": {
-				Cmds: []string{
+				Cmds: []taskfile.Command{
 					"go get -u ./...",
 					"go mod tidy",
 					"go get gopkg.in/yaml.v3",
 				},
 			},
 			"test": {
-				Cmds: []string{
-					fmt.Sprintf("go test -gcflags=\"%s\" -ldflags=\"%s\" -v ./...", gcflags["debug"], ldflags["debug"]),
+				Cmds: []taskfile.Command{
+					fmt.Sprintf(
+						"go test -gcflags=\"%s\" -ldflags=\"%s\" -v ./...",
+						gcflags["debug"],
+						ldflags["debug"],
+					),
 				},
 			},
 			"clean": {
-				Cmds: []string{"rm -rf bin"},
+				Cmds: []taskfile.Command{"rm -rf bin"},
 			},
 		}
-		tz := map[string]taskfileTask{}
+		ts1 := map[string]taskfile.Task{}
 		for _, b := range bins {
 			for _, p := range platforms {
 				os, arch := osArch(p)
 				for _, bb := range builds {
-					tz[fmt.Sprintf("build-%s-%s-%s-%s", b, os, arch, bb)] = taskfileTask{
-						Cmds: []string{
+					ts1[fmt.Sprintf("build-%s-%s-%s-%s", b, os, arch, bb)] = taskfile.Task{
+						Cmds: []taskfile.Command{
 							fmt.Sprintf("mkdir -p bin/%s", bb),
-							fmt.Sprintf("GOOS=%[2]s GOARCH=%[3]s go build -gcflags=\"%[5]s\" -ldflags=\"%[6]s\" -o bin/%[4]s/%[1]s_%[2]s_%[3]s%[7]s ./cmd/%[1]s", b, os, arch, bb, gcflags[bb], strings.TrimSpace(strings.Join([]string{ldflags[bb], buildMetadataLdflags}, " ")), lo.Ternary(os == "windows", ".exe", "")),
+							fmt.Sprintf(
+								"GOOS=%[2]s GOARCH=%[3]s go build -gcflags=\"%[5]s\" -ldflags=\"%[6]s\" -o bin/%[4]s/%[1]s_%[2]s_%[3]s%[7]s ./cmd/%[1]s",
+								b,
+								os,
+								arch,
+								bb,
+								gcflags[bb],
+								strings.TrimSpace(
+									strings.Join([]string{ldflags[bb], buildMetadataLdflags}, " "),
+								),
+								lo.Ternary(os == "windows", ".exe", ""),
+							),
+						},
+						Sources: sources,
+						Generates: []string{
+							fmt.Sprintf(
+								"bin/%s/%s_%s_%s%s",
+								bb,
+								b,
+								os,
+								arch,
+								lo.Ternary(os == "windows", ".exe", ""),
+							),
+						},
+						Requires: taskfile.Requires{
+							Vars: buildMetadataVarNames,
 						},
 					}
 				}
 			}
-		}
-		for k, v := range tz {
-			ts[k] = v
-		}
-		for _, b := range builds {
-			ts[fmt.Sprintf("build-%s", b)] = taskfileTask{
-				Deps: lo.Keys(tz),
+			for _, bb := range builds {
+				ts1[fmt.Sprintf("build-%s-%s", b, bb)] = taskfile.Task{
+					Cmds: []taskfile.Command{
+						fmt.Sprintf("mkdir -p bin/%s", bb),
+						fmt.Sprintf(
+							"go build -gcflags=\"%[3]s\" -ldflags=\"%[4]s\" -o bin/%[2]s/%[1]s%[5]s ./cmd/%[1]s",
+							b,
+							bb,
+							gcflags[bb],
+							strings.TrimSpace(
+								strings.Join([]string{ldflags[bb], buildMetadataLdflags}, " "),
+							),
+							lo.Ternary(runtime.GOOS == "windows", ".exe", ""),
+						),
+					},
+					Sources: sources,
+					Generates: []string{
+						fmt.Sprintf(
+							"bin/%s/%s%s",
+							bb,
+							b,
+							lo.Ternary(runtime.GOOS == "windows", ".exe", ""),
+						),
+					},
+					Requires: taskfile.Requires{
+						Vars: buildMetadataVarNames,
+					},
+				}
 			}
 		}
-		for _, k := range lo.Keys(ts) {
-			slices.Sort(ts[k].Deps)
+		ts2 := map[string]taskfile.Task{}
+		for _, b := range builds {
+			ks := lo.Filter(lo.Must(maputil.SortedKeys(ts1)), func(k string, _ int) bool {
+				return strings.HasSuffix(k, fmt.Sprintf("-%s", b))
+			})
+			ts2[fmt.Sprintf("build-%s", b)] = taskfile.Task{
+				Deps: lo.Map(ks, func(k string, _ int) taskfile.Dependency {
+					return k
+				}),
+			}
 		}
-		return
+		ts := lo.Assign(ts0, ts1, ts2)
+		return ts
 	}(),
 }
 

@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"runtime"
 	"slices"
 
-	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -18,68 +16,25 @@ import (
 	"github.com/hanselrd/domino/pkg/face"
 	"github.com/hanselrd/domino/pkg/tile"
 	"github.com/hanselrd/domino/pkg/tileset"
+	"github.com/hanselrd/domino/pkg/tui"
 )
 
-type keyMap struct {
-	left, down, up, right, help, quit key.Binding
-}
-
-func (k keyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.help, k.quit}
-}
-
-func (k keyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{
-		{k.left, k.down, k.up, k.right},
-		{k.help, k.quit},
-	}
-}
-
-var keys = keyMap{
-	left: key.NewBinding(
-		key.WithKeys("left", "h"),
-		key.WithHelp("←/h", "move left"),
-	),
-	down: key.NewBinding(
-		key.WithKeys("down", "j"),
-		key.WithHelp("↓/j", "move down"),
-	),
-	up: key.NewBinding(
-		key.WithKeys("up", "k"),
-		key.WithHelp("↑/k", "move up"),
-	),
-	right: key.NewBinding(
-		key.WithKeys("right", "l"),
-		key.WithHelp("→/l", "move right"),
-	),
-	help: key.NewBinding(
-		key.WithKeys("?"),
-		key.WithHelp("?", "toggle help"),
-	),
-	quit: key.NewBinding(
-		key.WithKeys("q", "esc", "ctrl+c"),
-		key.WithHelp("q", "quit"),
-	),
-}
-
 type model struct {
-	keys     keyMap
-	help     help.Model
+	help     tui.HelpModel
 	ready    bool
 	viewport viewport.Model
 	ts       tileset.TileSet
-	tvs      []tile.TileView
+	tvs      []tui.TileView
 }
 
 func initialModel() model {
 	t2f6f := tile.NewTileFactory(face.NewUnsignedFaceFactory(6), 2)
 	ts := lo.Must(tileset.NewTileSetShuffled(t2f6f))
 	return model{
-		keys: keys,
-		help: help.New(),
+		help: tui.NewHelpModel(),
 		ts:   *ts,
-		tvs: lo.Map(ts.Tiles(), func(t tile.Tile, _ int) tile.TileView {
-			m := tile.NewTileView(&t, lipgloss.Color(colorful.HappyColor().Hex()))
+		tvs: lo.Map(ts.Tiles(), func(t tile.Tile, _ int) tui.TileView {
+			m := tui.NewTileView(&t, colorful.HappyColor())
 			// m.Hidden = true
 			m.Horizontal = t.IsMultiple()
 			return m
@@ -98,8 +53,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	)
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.help.Width = msg.Width
-		helpHeight := lipgloss.Height(m.helpView())
+		helpHeight := lipgloss.Height(m.help.View())
 		if !m.ready {
 			m.viewport = viewport.New(msg.Width, msg.Height-helpHeight)
 			m.viewport.Style = lipgloss.NewStyle().
@@ -107,10 +61,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				BorderForeground(lipgloss.Color("#3C3C3C")).
 				Margin(0, 1)
 			ss := []string{}
-			tss := lo.Chunk(m.tvs, len(m.tvs)/4)
-			for _, ts := range tss {
-				ss = append(ss, lipgloss.JoinHorizontal(lipgloss.Center, lo.Map(ts, func(t tile.TileView, _ int) string {
-					return t.View()
+			tvss := lo.Chunk(m.tvs, len(m.tvs)/4)
+			for _, tvs := range tvss {
+				ss = append(ss, lipgloss.JoinHorizontal(lipgloss.Center, lo.Map(tvs, func(tv tui.TileView, _ int) string {
+					return tv.View()
 				})...))
 			}
 			ss = slices.Concat(ss, []string{
@@ -132,19 +86,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.KeyMsg:
 		switch {
-		// case key.Matches(msg, m.keys.left):
-		// case key.Matches(msg, m.keys.down):
-		// case key.Matches(msg, m.keys.up):
-		// case key.Matches(msg, m.keys.right):
-		case key.Matches(msg, m.keys.help):
-			prevHelpHeight := lipgloss.Height(m.helpView())
-			m.help.ShowAll = !m.help.ShowAll
+		// case key.Matches(msg, tui.Keys.Left):
+		// case key.Matches(msg, tui.Keys.Down):
+		// case key.Matches(msg, tui.Keys.Up):
+		// case key.Matches(msg, tui.Keys.Right):
+		case key.Matches(msg, tui.Keys.Help):
+			prevHelpHeight := lipgloss.Height(m.help.View())
+			m.help, cmd = m.help.Update(msg)
+			cmds = append(cmds, cmd)
 			m.viewport.Height += prevHelpHeight
-			m.viewport.Height -= lipgloss.Height(m.helpView())
+			m.viewport.Height -= lipgloss.Height(m.help.View())
 			if m.viewport.PastBottom() {
 				m.viewport.GotoBottom()
 			}
-		case key.Matches(msg, m.keys.quit):
+		case key.Matches(msg, tui.Keys.Quit):
 			return m, tea.Quit
 		}
 	case tea.MouseMsg:
@@ -158,11 +113,7 @@ func (m model) View() string {
 	if !m.ready {
 		return "\n  Initializing..."
 	}
-	return lipgloss.JoinVertical(lipgloss.Center, m.viewport.View(), m.helpView())
-}
-
-func (m model) helpView() string {
-	return fmt.Sprintf("%s", m.help.View(m.keys))
+	return lipgloss.JoinVertical(lipgloss.Center, m.viewport.View(), m.help.View())
 }
 
 func main() {

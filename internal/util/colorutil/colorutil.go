@@ -1,20 +1,12 @@
 package colorutil
 
-import (
-	"image/color"
+import "github.com/lucasb-eyer/go-colorful"
 
-	"github.com/lucasb-eyer/go-colorful"
-)
-
-func IsLight(c color.Color) bool {
-	cc, ok := colorful.MakeColor(c)
-	if !ok {
-		panic(ok)
-	}
-	_, _, l := cc.HSLuv()
+func IsLight(c colorful.Color) bool {
+	_, _, l := c.HSLuv()
 	return l > 0.5
 }
 
-func IsDark(c color.Color) bool {
+func IsDark(c colorful.Color) bool {
 	return !IsLight(c)
 }
