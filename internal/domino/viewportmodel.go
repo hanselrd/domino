@@ -13,8 +13,9 @@ import (
 )
 
 type ViewportModel struct {
-	Base    viewport.Model
-	XOffset int
+	InnerWidth, InnerHeight int
+	Base                    viewport.Model
+	XOffset                 int
 
 	lines   []string
 	columns int
@@ -65,9 +66,17 @@ func (m ViewportModel) Update(msg tea.Msg) (ViewportModel, tea.Cmd) {
 			}
 		}
 	}
-	m.Base.SetContent(strings.Join(lo.Map(m.lines, func(line string, _ int) string {
-		return stringutil.AnsiSubstring(line, m.XOffset, uint(m.contentWidth()))
-	}), "\n"))
+	contentHeight := m.InnerHeight + m.Base.Style.GetVerticalFrameSize()
+	m.Base.SetContent(
+		lipgloss.NewStyle().
+			Width(m.InnerWidth).
+			Height(contentHeight).
+			MaxWidth(m.InnerWidth).
+			MaxHeight(contentHeight).
+			Render(strings.Join(lo.Map(m.lines, func(line string, _ int) string {
+				return stringutil.AnsiSubstring(line, m.XOffset, uint(m.contentWidth()))
+			}), "\n")),
+	)
 	m.Base, cmd = m.Base.Update(msg)
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
@@ -79,8 +88,9 @@ func (m ViewportModel) View() string {
 
 func (m *ViewportModel) SetContent(s string) {
 	s = strings.ReplaceAll(s, "\r\n", "\n")
+	m.InnerWidth, m.InnerHeight = lipgloss.Size(s)
 	m.lines = strings.Split(s, "\n")
-	m.columns = lipgloss.Width(s)
+	m.columns = m.InnerWidth
 }
 
 func (m ViewportModel) maxXOffset() int {
