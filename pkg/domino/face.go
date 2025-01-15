@@ -1,4 +1,4 @@
-package face
+package domino
 
 import "fmt"
 

@@ -1,17 +1,15 @@
-package tile
+package domino
 
 import (
 	"fmt"
-
-	"github.com/hanselrd/domino/pkg/face"
 )
 
 type TileFactory struct {
-	ff       face.FaceFactory
+	ff       FaceFactory
 	numFaces uint
 }
 
-func NewTileFactory(ff face.FaceFactory, numFaces uint) TileFactory {
+func NewTileFactory(ff FaceFactory, numFaces uint) TileFactory {
 	return TileFactory{ff: ff, numFaces: numFaces}
 }
 
@@ -22,7 +20,7 @@ func (tf TileFactory) CreateTile(vs ...int) (*Tile, error) {
 	return newTile(tf.ff, vs...)
 }
 
-func (tf TileFactory) FaceFactory() face.FaceFactory {
+func (tf TileFactory) FaceFactory() FaceFactory {
 	return tf.ff
 }
 

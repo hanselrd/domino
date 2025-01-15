@@ -1,14 +1,16 @@
-package tui
+package domino
 
 import "github.com/charmbracelet/bubbles/key"
 
 type keyMap struct {
-	Left  key.Binding
-	Down  key.Binding
-	Up    key.Binding
-	Right key.Binding
-	Help  key.Binding
-	Quit  key.Binding
+	Next     key.Binding
+	Previous key.Binding
+	Left     key.Binding
+	Down     key.Binding
+	Up       key.Binding
+	Right    key.Binding
+	Help     key.Binding
+	Quit     key.Binding
 }
 
 func (k keyMap) ShortHelp() []key.Binding {
@@ -17,13 +19,21 @@ func (k keyMap) ShortHelp() []key.Binding {
 
 func (k keyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
+		{k.Next, k.Previous},
 		{k.Left, k.Down, k.Up, k.Right},
 		{k.Help, k.Quit},
 	}
 }
 
-// TODO: make private
-var Keys = keyMap{
+var KeyMap = keyMap{
+	Next: key.NewBinding(
+		key.WithKeys("tab", "h"),
+		key.WithHelp("tab", "focus next"),
+	),
+	Previous: key.NewBinding(
+		key.WithKeys("shift+tab", "h"),
+		key.WithHelp("S-tab", "focus previous"),
+	),
 	Left: key.NewBinding(
 		key.WithKeys("left", "h"),
 		key.WithHelp("←/h", "move left"),

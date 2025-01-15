@@ -1,4 +1,4 @@
-package tileset
+package domino
 
 import (
 	"fmt"
@@ -8,16 +8,14 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-
-	"github.com/hanselrd/domino/pkg/tile"
 )
 
 type TileSet struct {
-	tiles []tile.Tile
+	tiles []Tile
 }
 
-func NewTileSet(tf tile.TileFactory) (*TileSet, error) {
-	ts := []tile.Tile{}
+func NewTileSet(tf TileFactory) (*TileSet, error) {
+	ts := []Tile{}
 	vs := lo.RangeFrom(tf.FaceFactory().MinValue(), int(tf.FaceFactory().MaxValue()-tf.FaceFactory().MinValue()+1))
 	ns := lo.RangeFrom(0, int(lo.Must(strconv.ParseInt(strings.Repeat(strconv.FormatInt(int64(len(vs))-1, len(vs)), int(tf.NumFaces())), len(vs), 64)))+1)
 	ss := lo.Map(ns, func(n, _ int) string {
@@ -40,13 +38,13 @@ func NewTileSet(tf tile.TileFactory) (*TileSet, error) {
 	vss = slices.CompactFunc(vss, func(a, b []int) bool {
 		return slices.Compare(a, b) == 0
 	})
-	ts = lo.Map(vss, func(vs []int, _ int) tile.Tile {
+	ts = lo.Map(vss, func(vs []int, _ int) Tile {
 		return *lo.Must(tf.CreateTile(vs...))
 	})
 	return &TileSet{tiles: ts}, nil
 }
 
-func NewTileSetShuffled(tf tile.TileFactory) (*TileSet, error) {
+func NewTileSetShuffled(tf TileFactory) (*TileSet, error) {
 	ts, err := NewTileSet(tf)
 	if err != nil {
 		return nil, err
@@ -55,7 +53,7 @@ func NewTileSetShuffled(tf tile.TileFactory) (*TileSet, error) {
 	return ts, nil
 }
 
-func (ts TileSet) Tiles() []tile.Tile {
+func (ts TileSet) Tiles() []Tile {
 	return ts.tiles
 }
 
@@ -63,13 +61,13 @@ func (ts *TileSet) Shuffle() {
 	lo.Shuffle(ts.tiles)
 }
 
-func (ts *TileSet) Draw(n int) []tile.Tile {
-	tz := make([]tile.Tile, n)
+func (ts *TileSet) Draw(n int) []Tile {
+	tz := make([]Tile, n)
 	copy(tz, ts.tiles[:n])
 	ts.tiles = slices.Delete(ts.tiles, 0, n)
 	return tz
 }
 
-func (ts *TileSet) Return(tz ...tile.Tile) {
+func (ts *TileSet) Return(tz ...Tile) {
 	ts.tiles = slices.Concat(ts.tiles, tz)
 }

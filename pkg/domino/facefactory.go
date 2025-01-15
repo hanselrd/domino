@@ -1,4 +1,4 @@
-package face
+package domino
 
 type FaceFactory struct {
 	min, max int

@@ -1,29 +1,27 @@
-package tui
+package domino
 
 import (
 	"fmt"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/samber/lo"
 
 	"github.com/hanselrd/domino/internal/util/sliceutil"
-	"github.com/hanselrd/domino/pkg/face"
-	"github.com/hanselrd/domino/pkg/tile"
+	. "github.com/hanselrd/domino/pkg/domino"
 )
 
 type TileView struct {
 	Hidden     bool
 	Horizontal bool
 	Rotate     int
-	Data       *tile.Tile
+	Data       *Tile
 
 	style lipgloss.Style
 }
 
-func NewTileView(data *tile.Tile, color colorful.Color) TileView {
+func NewTileView(data *Tile, color colorful.Color) TileView {
 	return TileView{
 		Hidden:     false,
 		Horizontal: false,
@@ -37,11 +35,11 @@ func NewTileView(data *tile.Tile, color colorful.Color) TileView {
 }
 
 func (tv TileView) View() string {
-	ss := lo.Interleave(lo.Map(sliceutil.Rotate(tv.Data.Faces(), tv.Rotate), func(f face.Face, _ int) string {
+	ss := lo.Interleave(lo.Map(sliceutil.Rotate(tv.Data.Faces(), tv.Rotate), func(f Face, _ int) string {
 		return fmt.Sprintf(" %s ", lo.Ternary(tv.Hidden, " ", f.String()))
 	}), lo.Times(len(tv.Data.Faces())-1, func(_ int) string {
 		d := lo.Ternary(tv.Horizontal, "|", "---")
-		return lo.Ternary(tv.Hidden, strings.Repeat(" ", utf8.RuneCountInString(d)), d)
+		return lo.Ternary(tv.Hidden, strings.Repeat(" ", lo.RuneLength(d)), d)
 	}))
 	return tv.style.Render(lo.Ternary(tv.Horizontal,
 		lipgloss.JoinHorizontal(lipgloss.Center, ss...),
