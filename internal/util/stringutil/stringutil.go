@@ -21,5 +21,11 @@ func AnsiSubstring[T ~string](s T, offset int, length uint) T {
 	if offset == 0 {
 		return T(ansi.Truncate(string(s), int(length), ""))
 	}
-	return T(ansi.Truncate(ansi.TruncateLeft(string(s), offset, ""), int(length), ""))
+	return T(
+		ansi.Truncate(
+			ansi.TruncateLeft(string(s), offset, ""),
+			int(length),
+			"",
+		),
+	)
 }

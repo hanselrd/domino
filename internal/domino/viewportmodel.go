@@ -17,8 +17,7 @@ type ViewportModel struct {
 	Base                    viewport.Model
 	XOffset                 int
 
-	lines   []string
-	columns int
+	lines []string
 }
 
 func NewViewportModel(width, height int) ViewportModel {
@@ -32,8 +31,7 @@ func NewViewportModel(width, height int) ViewportModel {
 	m.Base.Style = lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color("#3C3C3C")).
-		Margin(0, 1).
-		Padding(1)
+		Margin(0, 1)
 	return m
 }
 
@@ -41,7 +39,7 @@ func (m ViewportModel) Init() tea.Cmd {
 	return m.Base.Init()
 }
 
-func (m ViewportModel) Update(msg tea.Msg) (ViewportModel, tea.Cmd) {
+func (m ViewportModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
@@ -66,7 +64,11 @@ func (m ViewportModel) Update(msg tea.Msg) (ViewportModel, tea.Cmd) {
 			}
 		}
 	}
-	contentHeight := m.InnerHeight + m.Base.Style.GetVerticalFrameSize()
+	contentHeight := m.InnerHeight + lo.Ternary(
+		m.InnerHeight > m.Base.Style.GetVerticalFrameSize(),
+		m.Base.Style.GetVerticalFrameSize(),
+		0,
+	)
 	m.Base.SetContent(
 		lipgloss.NewStyle().
 			Width(m.InnerWidth).
@@ -74,7 +76,11 @@ func (m ViewportModel) Update(msg tea.Msg) (ViewportModel, tea.Cmd) {
 			MaxWidth(m.InnerWidth).
 			MaxHeight(contentHeight).
 			Render(strings.Join(lo.Map(m.lines, func(line string, _ int) string {
-				return stringutil.AnsiSubstring(line, m.XOffset, uint(m.contentWidth()))
+				return stringutil.AnsiSubstring(
+					line,
+					m.XOffset,
+					uint(min(m.InnerWidth, m.viewWidth())),
+				)
 			}), "\n")),
 	)
 	m.Base, cmd = m.Base.Update(msg)
@@ -90,23 +96,30 @@ func (m *ViewportModel) SetContent(s string) {
 	s = strings.ReplaceAll(s, "\r\n", "\n")
 	m.InnerWidth, m.InnerHeight = lipgloss.Size(s)
 	m.lines = strings.Split(s, "\n")
-	m.columns = m.InnerWidth
 }
 
 func (m ViewportModel) maxXOffset() int {
-	return max(0, m.columns-m.contentWidth())
+	return max(0, m.InnerWidth-m.viewWidth())
 }
 
 func (m *ViewportModel) SetXOffset(n int) {
 	m.XOffset = lo.Clamp(n, 0, m.maxXOffset())
 }
 
-func (m ViewportModel) contentWidth() int {
+func (m ViewportModel) viewWidth() int {
 	w := m.Base.Width
 	if sw := m.Base.Style.GetWidth(); sw != 0 {
 		w = min(w, sw)
 	}
 	return w - m.Base.Style.GetHorizontalFrameSize()
+}
+
+func (m ViewportModel) viewHeight() int {
+	h := m.Base.Height
+	if sh := m.Base.Style.GetHeight(); sh != 0 {
+		h = min(h, sh)
+	}
+	return h - m.Base.Style.GetVerticalFrameSize()
 }
 
 func (m *ViewportModel) SetSize(width, height int) {

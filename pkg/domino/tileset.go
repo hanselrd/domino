@@ -1,37 +1,51 @@
 package domino
 
 import (
-	"fmt"
 	"slices"
 	"sort"
-	"strconv"
-	"strings"
 
 	"github.com/samber/lo"
+
+	"github.com/hanselrd/domino/internal/util/optionutil"
 )
 
 type TileSet struct {
 	tiles []Tile
 }
 
-func NewTileSet(tf TileFactory) (*TileSet, error) {
+type TileSetOption func(*TileSet)
+
+func WithShuffle() TileSetOption {
+	return func(ts *TileSet) {
+		ts.Shuffle()
+	}
+}
+
+func NewTileSet(tf TileFactory, opts ...TileSetOption) (*TileSet, error) {
 	ts := []Tile{}
-	vs := lo.RangeFrom(tf.FaceFactory().MinValue(), int(tf.FaceFactory().MaxValue()-tf.FaceFactory().MinValue()+1))
-	ns := lo.RangeFrom(0, int(lo.Must(strconv.ParseInt(strings.Repeat(strconv.FormatInt(int64(len(vs))-1, len(vs)), int(tf.NumFaces())), len(vs), 64)))+1)
-	ss := lo.Map(ns, func(n, _ int) string {
-		s := fmt.Sprintf("%0*s", tf.NumFaces(), strconv.FormatInt(int64(n), len(vs)))
-		if len(s) != int(tf.NumFaces()) {
-			panic(fmt.Sprintf("%s must have a length of %d", s, tf.NumFaces()))
-		}
-		return s
-	})
-	vss := lo.Map(ss, func(s string, _ int) []int {
-		vs := lo.Map(strings.Split(s, ""), func(i string, _ int) int {
-			return vs[lo.Must(strconv.ParseInt(i, len(vs), 64))]
-		})
-		slices.Sort(vs)
-		return vs
-	})
+	vs := lo.RangeFrom(
+		tf.FaceFactory().MinValue(),
+		int(tf.FaceFactory().MaxValue()-tf.FaceFactory().MinValue()+1),
+	)
+	vss := lo.RepeatBy(
+		lo.Sum(
+			lo.RepeatBy(int(tf.NumFaces()), func(i int) int {
+				n := len(vs) - 1
+				for range i {
+					n *= len(vs)
+				}
+				return n
+			}))+1,
+		func(i int) []int {
+			vz := []int{}
+			for range tf.NumFaces() {
+				vz = append(vz, i%len(vs))
+				i /= len(vs)
+			}
+			slices.Sort(vz)
+			return vz
+		},
+	)
 	sort.Slice(vss, func(i, j int) bool {
 		return slices.Compare(vss[i], vss[j]) < 0
 	})
@@ -41,16 +55,7 @@ func NewTileSet(tf TileFactory) (*TileSet, error) {
 	ts = lo.Map(vss, func(vs []int, _ int) Tile {
 		return *lo.Must(tf.CreateTile(vs...))
 	})
-	return &TileSet{tiles: ts}, nil
-}
-
-func NewTileSetShuffled(tf TileFactory) (*TileSet, error) {
-	ts, err := NewTileSet(tf)
-	if err != nil {
-		return nil, err
-	}
-	ts.Shuffle()
-	return ts, nil
+	return optionutil.Configure(&TileSet{tiles: ts}, opts), nil
 }
 
 func (ts TileSet) Tiles() []Tile {

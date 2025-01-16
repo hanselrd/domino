@@ -2,6 +2,8 @@ package domino
 
 import (
 	"fmt"
+	"runtime"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -9,6 +11,7 @@ import (
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/samber/lo"
 
+	"github.com/hanselrd/domino/internal/build"
 	. "github.com/hanselrd/domino/pkg/domino"
 )
 
@@ -33,11 +36,11 @@ func NewGameModel() GameModel {
 		Padding(1)
 	m.FocusStyle = m.Style.BorderForeground(lipgloss.Color("#FFDD99"))
 	m.help = NewHelpModel()
-	m.tileSet = *lo.Must(NewTileSet(NewTileFactory(NewUnsignedFaceFactory(6), 2)))
+	m.tileSet = *lo.Must(NewTileSet(NewTileFactory(NewUnsignedFaceFactory(15), 2), WithShuffle()))
 	m.tiles = lo.Map(m.tileSet.Tiles(), func(t Tile, i int) TileView {
 		m := NewTileView(&t, colorful.HappyColor())
-		m.Hidden = i%2 == 0
-		m.Horizontal = !t.IsMultiple()
+		// m.Hidden = i%2 == 0
+		// m.Horizontal = !t.IsMultiple()
 		return m
 	})
 	return m
@@ -47,8 +50,7 @@ func (m GameModel) Init() tea.Cmd {
 	return tea.Batch(m.viewport.Init(), m.help.Init())
 }
 
-func (m GameModel) Update(msg tea.Msg) (GameModel, tea.Cmd) {
-	var cmd tea.Cmd
+func (m GameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -70,51 +72,83 @@ func (m GameModel) Update(msg tea.Msg) (GameModel, tea.Cmd) {
 			return m, tea.Quit
 		}
 	}
-	// content0 := strings.Join(
-	// 	[]string{
-	// 		"-----------------------",
-	// 		"-----------------------",
-	// 		"/// DOMINO",
-	// 		"-----------------------",
-	// 		"-----------------------",
-	// 		"/// Game Information",
-	// 		"-----------------------",
-	// 		fmt.Sprintf("window.Size= %dx%d", m.Width, m.Height),
-	// 		fmt.Sprintf("viewport.Size= %dx%d", m.viewport.Base.Width, m.viewport.Base.Height),
-	// 		fmt.Sprintf("viewport.Style.Size= %dx%d", m.viewport.Base.Style.GetWidth(), m.viewport.Base.Style.GetHeight()),
-	// 		fmt.Sprintf("viewport.Style.FrameSize= %dx%d", m.viewport.Base.Style.GetHorizontalFrameSize(), m.viewport.Base.Style.GetVerticalFrameSize()),
-	// 		"-----------------------",
-	// 		"/// Build Metadata",
-	// 		"-----------------------",
-	// 		fmt.Sprintf("runtime.Version= %s", runtime.Version()),
-	// 		fmt.Sprintf("build.Version= %s", build.Version),
-	// 		fmt.Sprintf("build.Time= %s", build.Time),
-	// 		fmt.Sprintf("build.Hash= %s", build.Hash),
-	// 		fmt.Sprintf("build.ShortHash= %s", build.ShortHash),
-	// 		fmt.Sprintf("build.Dirty= %s", build.Dirty),
-	// 		"-----------------------",
-	// 	}, "\n")
-	content1 := lipgloss.JoinVertical(lipgloss.Left,
-		lo.Map(lo.Chunk(m.tiles, len(m.tiles)/4), func(ts []TileView, _ int) string {
-			return lipgloss.JoinHorizontal(lipgloss.Center,
-				lo.Map(ts, func(t TileView, _ int) string {
-					return t.View()
-				})...)
-		})...)
-	m.viewport.SetContent(
-		lipgloss.JoinHorizontal(lipgloss.Top,
-			lipgloss.JoinVertical(lipgloss.Left,
-				// fmt.Sprintf("content0.Size= %dx%d", lipgloss.Width(content0), lipgloss.Height(content0)),
-				fmt.Sprintf("content1.Size= %dx%d", lipgloss.Width(content1), lipgloss.Height(content1)),
+	content0 := lipgloss.JoinVertical(
+		lipgloss.Left,
+		lo.Map(
+			lo.Chunk(m.tiles, len(m.tiles)/4),
+			func(ts []TileView, _ int) string {
+				return lipgloss.JoinHorizontal(lipgloss.Center,
+					lo.Map(ts, func(t TileView, _ int) string {
+						return t.View()
+					})...)
+			},
+		)...)
+	content1 := strings.Join(
+		[]string{
+			"-----------------------",
+			"-----------------------",
+			"/// DOMINO",
+			"-----------------------",
+			"-----------------------",
+			"/// Game Information",
+			"-----------------------",
+			fmt.Sprintf("window.Size= %dx%d", m.Width, m.Height),
+			fmt.Sprintf(
+				"viewport.Size= %dx%d",
+				m.viewport.Base.Width,
+				m.viewport.Base.Height,
 			),
-			// content0,
+			fmt.Sprintf(
+				"viewport.Style.Size= %dx%d",
+				m.viewport.Base.Style.GetWidth(),
+				m.viewport.Base.Style.GetHeight(),
+			),
+			fmt.Sprintf(
+				"viewport.Style.FrameSize= %dx%d",
+				m.viewport.Base.Style.GetHorizontalFrameSize(),
+				m.viewport.Base.Style.GetVerticalFrameSize(),
+			),
+			"-----------------------",
+			"/// Build Metadata",
+			"-----------------------",
+			fmt.Sprintf("runtime.Version= %s", runtime.Version()),
+			fmt.Sprintf("build.Version= %s", build.Version),
+			fmt.Sprintf("build.Time= %s", build.Time),
+			fmt.Sprintf("build.Hash= %s", build.Hash),
+			fmt.Sprintf("build.ShortHash= %s", build.ShortHash),
+			fmt.Sprintf("build.Dirty= %s", build.Dirty),
+			"-----------------------",
+		}, "\n")
+	m.viewport.SetContent(
+		lipgloss.JoinVertical(
+			lipgloss.Left,
+			// fmt.Sprintf(
+			// 	"content0.Size= %dx%d",
+			// 	lipgloss.Width(content0),
+			// 	lipgloss.Height(content0),
+			// ),
+			// fmt.Sprintf(
+			// 	"content1.Size= %dx%d",
+			// 	lipgloss.Width(content1),
+			// 	lipgloss.Height(content1),
+			// ),
+			fmt.Sprintf("domino.Tiles= %d", len(m.tileSet.Tiles())),
+			content0,
 			content1,
 		),
 	)
-	m.viewport, cmd = m.viewport.Update(msg)
-	cmds = append(cmds, cmd)
-	m.help, cmd = m.help.Update(msg)
-	cmds = append(cmds, cmd)
+	// m.viewport.InnerWidth = 22
+	// m.viewport.InnerHeight = 7
+	model, cmd := m.viewport.Update(msg)
+	if viewport, ok := model.(ViewportModel); ok {
+		m.viewport = viewport
+		cmds = append(cmds, cmd)
+	}
+	model, cmd = m.help.Update(msg)
+	if help, ok := model.(HelpModel); ok {
+		m.help = help
+		cmds = append(cmds, cmd)
+	}
 	return m, tea.Batch(cmds...)
 }
 

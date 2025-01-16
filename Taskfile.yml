@@ -227,7 +227,7 @@ tasks:
     cmds:
       - goimports -w -local "github.com/hanselrd/domino" .
       - gofumpt -w -extra .
-      - golines -w -m 100 **/*.go
+      - golines -w -m 80 **/*.go
     sources:
       - '**/*.go'
   test:
@@ -238,3 +238,5 @@ tasks:
       - go get -u ./...
       - go mod tidy
       - go get gopkg.in/yaml.v3
+shopt:
+  - globstar

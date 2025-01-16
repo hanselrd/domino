@@ -7,7 +7,7 @@ import (
 func TestTileSetT2F6(t *testing.T) {
 	f6f := NewUnsignedFaceFactory(6)
 	t2f := NewTileFactory(f6f, 2)
-	ts, err := NewTileSetShuffled(t2f)
+	ts, err := NewTileSet(t2f)
 	if err != nil {
 		t.Error(err)
 	}
@@ -20,7 +20,7 @@ func TestTileSetT2F6(t *testing.T) {
 func TestTileSetT2F9(t *testing.T) {
 	f9f := NewUnsignedFaceFactory(9)
 	t2f := NewTileFactory(f9f, 2)
-	ts, err := NewTileSetShuffled(t2f)
+	ts, err := NewTileSet(t2f)
 	if err != nil {
 		t.Error(err)
 	}
@@ -33,7 +33,7 @@ func TestTileSetT2F9(t *testing.T) {
 func TestTileSetT2F12(t *testing.T) {
 	f12f := NewUnsignedFaceFactory(12)
 	t2f := NewTileFactory(f12f, 2)
-	ts, err := NewTileSetShuffled(t2f)
+	ts, err := NewTileSet(t2f)
 	if err != nil {
 		t.Error(err)
 	}
@@ -46,7 +46,7 @@ func TestTileSetT2F12(t *testing.T) {
 func TestTileSetT2F15(t *testing.T) {
 	f15f := NewUnsignedFaceFactory(15)
 	t2f := NewTileFactory(f15f, 2)
-	ts, err := NewTileSetShuffled(t2f)
+	ts, err := NewTileSet(t2f)
 	if err != nil {
 		t.Error(err)
 	}
@@ -111,7 +111,7 @@ func TestTileSetT3F15(t *testing.T) {
 func TestTileSetT2F6DrawReturn(t *testing.T) {
 	f6f := NewUnsignedFaceFactory(6)
 	t2f := NewTileFactory(f6f, 2)
-	ts, err := NewTileSetShuffled(t2f)
+	ts, err := NewTileSet(t2f)
 	if err != nil {
 		t.Error(err)
 	}

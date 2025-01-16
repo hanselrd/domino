@@ -28,9 +28,12 @@ var (
 	}
 	builds  = []string{"debug", "release"}
 	sources = slices.Concat(
-		lo.Map([]string{"cmd", "internal", "pkg"}, func(d string, _ int) string {
-			return fmt.Sprintf("%s/**/*.go", d)
-		}),
+		lo.Map(
+			[]string{"cmd", "internal", "pkg"},
+			func(d string, _ int) string {
+				return fmt.Sprintf("%s/**/*.go", d)
+			},
+		),
 		[]string{"Taskfile.yml"},
 	)
 	gcflags = map[string]string{
@@ -82,6 +85,7 @@ func osArch(platform string) (os, arch string) {
 
 var tf = taskfile.Taskfile{
 	Version: "3",
+	Shopt:   []string{"globstar"},
 	Vars:    buildMetadataVars,
 	Tasks: func() map[string]taskfile.Task {
 		ts0 := map[string]taskfile.Task{
@@ -114,7 +118,7 @@ var tf = taskfile.Taskfile{
 				Cmds: []taskfile.Command{
 					"goimports -w -local \"github.com/hanselrd/domino\" .",
 					"gofumpt -w -extra .",
-					"golines -w -m 100 **/*.go",
+					"golines -w -m 80 **/*.go",
 				},
 				Sources: []string{"**/*.go"},
 			},
@@ -154,7 +158,13 @@ var tf = taskfile.Taskfile{
 								bb,
 								gcflags[bb],
 								strings.TrimSpace(
-									strings.Join([]string{ldflags[bb], buildMetadataLdflags}, " "),
+									strings.Join(
+										[]string{
+											ldflags[bb],
+											buildMetadataLdflags,
+										},
+										" ",
+									),
 								),
 								lo.Ternary(os == "windows", ".exe", ""),
 							),
@@ -186,7 +196,10 @@ var tf = taskfile.Taskfile{
 							bb,
 							gcflags[bb],
 							strings.TrimSpace(
-								strings.Join([]string{ldflags[bb], buildMetadataLdflags}, " "),
+								strings.Join(
+									[]string{ldflags[bb], buildMetadataLdflags},
+									" ",
+								),
 							),
 							lo.Ternary(runtime.GOOS == "windows", ".exe", ""),
 						),
@@ -208,11 +221,16 @@ var tf = taskfile.Taskfile{
 		}
 		ts2 := map[string]taskfile.Task{}
 		for _, b := range builds {
-			ks := lo.Filter(lo.Must(maputil.SortedKeys(ts1)), func(k string, _ int) bool {
-				return strings.HasSuffix(k, fmt.Sprintf("-%s", b))
-			})
+			ks := lo.Filter(
+				lo.Must(maputil.SortedKeys(ts1)),
+				func(k string, _ int) bool {
+					return strings.HasSuffix(k, fmt.Sprintf("-%s", b))
+				},
+			)
 			ts2[fmt.Sprintf("build-%s", b)] = taskfile.Task{
-				Deps: lo.T2(sliceutil.Convert[string, taskfile.Dependency](ks)).A,
+				Deps: lo.T2(
+					sliceutil.Convert[string, taskfile.Dependency](ks),
+				).A,
 			}
 		}
 		ts := lo.Assign(ts0, ts1, ts2)

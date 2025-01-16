@@ -26,9 +26,11 @@ func newTile(ff FaceFactory, vs ...int) (*Tile, error) {
 			return nil, err
 		}
 	}
-	return &Tile{faces: lo.Map(t2s, func(t2 lo.Tuple2[*Face, error], _ int) Face {
-		return *t2.A
-	})}, nil
+	return &Tile{
+		faces: lo.Map(t2s, func(t2 lo.Tuple2[*Face, error], _ int) Face {
+			return *t2.A
+		}),
+	}, nil
 }
 
 func (t Tile) Faces() []Face {
