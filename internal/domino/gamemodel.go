@@ -38,10 +38,10 @@ func NewGameModel() GameModel {
 	m.help = NewHelpModel()
 	m.tileSet = *lo.Must(NewTileSet(NewTileFactory(NewUnsignedFaceFactory(15), 2), WithShuffle()))
 	m.tiles = lo.Map(m.tileSet.Tiles(), func(t Tile, i int) TileView {
-		m := NewTileView(&t, colorful.HappyColor())
+		tv := NewTileView(&t, colorful.HappyColor())
 		// m.Hidden = i%2 == 0
-		// m.Horizontal = !t.IsMultiple()
-		return m
+		tv.Horizontal = !t.IsMultiple()
+		return tv
 	})
 	return m
 }
